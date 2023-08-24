@@ -1,30 +1,29 @@
 # Speak Chat
 
-> ChatGPTと音声で会話ができるアプリ<br />
+> An app that allows you to have conversations with ChatGPT using voice.
 
 ![SpeakChat (820 x 360 px)](https://user-images.githubusercontent.com/89951949/228485481-8751541c-6a8a-47f3-997a-075d0f012188.PNG)
 
-
 - Chat-Gpt-API (chat/completions)
-- STT (Speech-To-Text/音声の文字化)
-- TTS (Text-To-Speech/文字の音声化)
+- STT (Speech-To-Text)
+- TTS (Text-To-Speech)
 
-## 対応プラットフォーム
-- Android （エミュレーターでは動作不可）
+## Supported Platforms
+
+- Android (not compatible with emulators)
 - iOS
 
 ## Getting Started
 
-プロジェクト直下に .envファイルを用意してご自身のAPIキーを入力してください<br />
-`OPEN_AI_API_KEY={APIキー}`
+Prepare a .env file in the project directory and input your API key as follows:
+`OPENAI_API_KEY={your API key}`
 
 ## Setup
 
 Run the following commands from your terminal:
 
-1) `git clone https://github.com/belcrod5/Speak-Chat.git`
-2) `flutter pub get` in the project root directory to install all the required dependencies.
-
+1. `git clone https://github.com/belcrod5/Speak-Chat.git`
+2. Run `flutter pub get` in the project root directory to install all the required dependencies.
 
 ## Screenshots
 
@@ -38,6 +37,6 @@ Run the following commands from your terminal:
   </tbody>
 </table>
 
-
 ## LICENSE
+
 Speak Chat is [MIT-licensed](https://github.com/belcrod5/Speak-Chat/blob/main/LICENSE).
