@@ -479,12 +479,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                       children: [
                                         Text(
                                           item["role"] == "user"
-                                              ? "わたし　："
-                                              : "ロボット：",
+                                              ? "Me  :"
+                                              : "Bot :",
                                           style: TextStyle(
                                             color: item["role"] == "user"
                                                 ? Colors.blue
-                                                : Colors.green, // テキストの色を青に設定
+                                                : Colors
+                                                    .green, // Set text color to blue
                                           ),
                                         ),
                                         Expanded(
