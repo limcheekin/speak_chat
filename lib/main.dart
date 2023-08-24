@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -15,6 +17,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
 final Logger _logger = Logger('MyApp');
+const defaultLocaleLanguage = 'en';
+const defaultLocaleCountry = 'US';
+const defaultLocale = '${defaultLocaleLanguage}_$defaultLocaleCountry';
+const defaultLocaleId = '$defaultLocaleLanguage-$defaultLocaleCountry';
 
 void main() async {
   // Load environment variables
@@ -24,10 +30,10 @@ void main() async {
   KeepScreenOn.turnOn();
 
   //initializeDateFormatting();
-  Intl.defaultLocale = 'ja_JP';
+  Intl.defaultLocale = defaultLocale;
 
   // Locale and language settings (fixed in Info.plist on iOS)
-  Intl.withLocale('ja', () => runApp(const MyApp()));
+  Intl.withLocale(defaultLocaleLanguage, () => runApp(const MyApp()));
 }
 
 class SettingView extends StatefulWidget {
@@ -56,7 +62,10 @@ class _SettingViewState extends State<SettingView> {
       _items.clear();
       for (var item in voices) {
         var map = item as Map<Object?, Object?>;
-        if (map["locale"].toString().toLowerCase().contains("ja")) {
+        if (map["locale"]
+            .toString()
+            .toLowerCase()
+            .contains(defaultLocaleLanguage)) {
           _logger.info(map["name"]);
           _items.add(map["name"].toString());
         }
@@ -79,7 +88,7 @@ class _SettingViewState extends State<SettingView> {
     }
 
     await tts.stop();
-    await tts.setVoice({'name': voiceName, 'locale': 'ja-JP'});
+    await tts.setVoice({'name': voiceName, 'locale': defaultLocaleId});
 
     await tts.speak("$who voice has been set");
   }
@@ -149,8 +158,10 @@ class MyApp extends StatelessWidget {
       ],
 
       // Locale and language settings (fixed in Info.plist on iOS)
-      supportedLocales: const [Locale('ja', 'JP')],
-      locale: const Locale('ja', 'JP'),
+      supportedLocales: const [
+        Locale(defaultLocaleLanguage, defaultLocaleCountry)
+      ],
+      locale: const Locale(defaultLocaleLanguage, defaultLocaleCountry),
     );
   }
 }
@@ -219,8 +230,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _speach(dynamic item) async {
     // Stop and play
     await tts.stop();
-    await tts
-        .setVoice({'name': _getVoiceName(item["role"]), 'locale': 'ja-JP'});
+    await tts.setVoice(
+        {'name': _getVoiceName(item["role"]), 'locale': defaultLocaleId});
 
     await tts.speak(item["content"]);
   }
@@ -279,7 +290,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Stop and play
     await tts.stop();
-    await tts.setVoice({'name': _getVoiceName("user"), 'locale': 'ja-JP'});
+    await tts
+        .setVoice({'name': _getVoiceName("user"), 'locale': defaultLocaleId});
     await tts.speak(lastWords);
 
     // Add sent message
@@ -305,7 +317,7 @@ class _MyHomePageState extends State<MyHomePage> {
     ];
 
     final openaiApiKey = dotenv.get("OPENAI_API_KEY");
-    final openaiApiBase = dotenv.get("OPEN_AI_API_BASE");
+    final openaiApiBase = dotenv.get("OPENAI_API_BASE");
     Uri url = Uri.parse("$openaiApiBase/chat/completions");
     Map<String, String> headers = {
       'Content-type': 'application/json',
@@ -386,8 +398,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
               () async {
                 // Speak received message
-                await tts.setVoice(
-                    {'name': _getVoiceName("robot"), 'locale': 'ja-JP'});
+                await tts.setVoice({
+                  'name': _getVoiceName("robot"),
+                  'locale': defaultLocaleId
+                });
                 await tts.speak(speackMsg);
               }();
             }
@@ -414,7 +428,8 @@ class _MyHomePageState extends State<MyHomePage> {
     scrollController.jumpTo(scrollController.position.maxScrollExtent);
 
     // Speak remaining received messages
-    await tts.setVoice({'name': _getVoiceName("robot"), 'locale': 'ja-JP'});
+    await tts
+        .setVoice({'name': _getVoiceName("robot"), 'locale': defaultLocaleId});
     await tts.speak(receiveMsgSpeak);
   }
 
@@ -601,7 +616,7 @@ class SpeechDialogState extends State<SpeechDialog> {
                 soundLevel = level * -1;
               });
             },
-            localeId: "ja-JP");
+            localeId: defaultLocaleId);
       } else {
         _logger.info("The user has denied the use of speech recognition.");
       }
