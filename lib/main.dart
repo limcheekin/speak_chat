@@ -14,31 +14,23 @@ import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
-
 final Logger _logger = Logger('MyApp');
 
-
 void main() async {
-  
-  //環境変数を読み込む
+  // Load environment variables
   await dotenv.load(fileName: ".env");
 
-  // スリープさせない
+  // Prevent sleep
   KeepScreenOn.turnOn();
-  
+
   //initializeDateFormatting();
   Intl.defaultLocale = 'ja_JP';
 
-  //ロケール・言語設定（iOSはInfo.plistで直った）
-  Intl.withLocale('ja', () => 
-
-    runApp(const MyApp())
-  );
+  // Locale and language settings (fixed in Info.plist on iOS)
+  Intl.withLocale('ja', () => runApp(const MyApp()));
 }
 
-
 class SettingView extends StatefulWidget {
-
   const SettingView({super.key});
 
   @override
@@ -57,96 +49,82 @@ class _SettingViewState extends State<SettingView> {
     super.initState();
 
     Future(() async {
-
       prefs = await SharedPreferences.getInstance();
 
       List voices = await tts.getVoices;
 
       _items.clear();
-      for(var item in voices){
+      for (var item in voices) {
         var map = item as Map<Object?, Object?>;
-        if(map["locale"].toString().toLowerCase().contains("ja")){
+        if (map["locale"].toString().toLowerCase().contains("ja")) {
           _logger.info(map["name"]);
           _items.add(map["name"].toString());
         }
       }
-      if(_items.isNotEmpty){
-        
-        _selectedItemMy = prefs.getString("voice_わたし") ?? _items[0];
-        _selectedItemBot = prefs.getString("voice_ロボット") ?? _items[0];
+      if (_items.isNotEmpty) {
+        _selectedItemMy = prefs.getString("voice_me") ?? _items[0];
+        _selectedItemBot = prefs.getString("voice_robot") ?? _items[0];
       }
 
-      // プルダウンを反映
+      // Reflect dropdown
       setState(() {});
-      
     });
   }
 
   Future<void> _changeVoice(String voiceName, String who, bool speak) async {
-
     prefs.setString("voice_$who", voiceName);
 
-    if(!speak)
-    {
+    if (!speak) {
       return;
     }
 
     await tts.stop();
-    await tts.setVoice({
-      'name': voiceName,
-      'locale': 'ja-JP'
-    });
-    
-    await tts.speak("$whoの声が設定されました");
+    await tts.setVoice({'name': voiceName, 'locale': 'ja-JP'});
+
+    await tts.speak("$who voice has been set");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text("Setting"),
+        title: const Text("Setting"),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('わたしの声'),
-            DropdownButton<String>(
-              value: _selectedItemMy,
-              items: _items
-                  .map((String list) =>
-                      DropdownMenuItem(value: list, child: Text(list)))
-                  .toList(),
-              onChanged: (String? value) {
-                setState(() {
-                  _selectedItemMy = value!;
-                  _changeVoice(_selectedItemMy, "わたし", true);
-                });
-              },
-            ),
-            const Divider(height: 100),
-
-            const Text('ロボットの声'),
-            DropdownButton<String>(
-              value: _selectedItemBot,
-              items: _items
-                  .map((String list) =>
-                      DropdownMenuItem(value: list, child: Text(list)))
-                  .toList(),
-              onChanged: (String? value) {
-                setState(() {
-                  _selectedItemBot = value!;
-                  _changeVoice(_selectedItemBot, "ロボット", true);
-                });
-              },
-            ),
-          ]
-        )
-      ),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Text('My Voice'),
+        DropdownButton<String>(
+          value: _selectedItemMy,
+          items: _items
+              .map((String list) =>
+                  DropdownMenuItem(value: list, child: Text(list)))
+              .toList(),
+          onChanged: (String? value) {
+            setState(() {
+              _selectedItemMy = value!;
+              _changeVoice(_selectedItemMy, "me", true);
+            });
+          },
+        ),
+        const Divider(height: 100),
+        const Text('Robot Voice'),
+        DropdownButton<String>(
+          value: _selectedItemBot,
+          items: _items
+              .map((String list) =>
+                  DropdownMenuItem(value: list, child: Text(list)))
+              .toList(),
+          onChanged: (String? value) {
+            setState(() {
+              _selectedItemBot = value!;
+              _changeVoice(_selectedItemBot, "robot", true);
+            });
+          },
+        ),
+      ])),
     );
   }
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -161,23 +139,21 @@ class MyApp extends StatelessWidget {
       ),
       home: const MyHomePage(title: 'Speak Chat'),
 
-      //ロケール・言語設定（iOSはInfo.plistで直った）
+      // Locale and language settings (fixed in Info.plist on iOS)
       localizationsDelegates: const [
-        // localizations delegateを追加
+        // localizations delegate to add
         //AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      
-      //ロケール・言語設定（iOSはInfo.plistで直った）
+
+      // Locale and language settings (fixed in Info.plist on iOS)
       supportedLocales: const [Locale('ja', 'JP')],
       locale: const Locale('ja', 'JP'),
-
     );
   }
 }
-
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -188,49 +164,42 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-
 class _MyHomePageState extends State<MyHomePage> {
   String lastWords = '';
-  
+
   List<Object> chatMessages = [];
   final FlutterTts tts = FlutterTts();
   late SharedPreferences prefs;
   var inputTextcontroller = TextEditingController();
   ScrollController scrollController = ScrollController();
 
-
   @override
   void initState() {
     super.initState();
 
-
     Future(() async {
-
       prefs = await SharedPreferences.getInstance();
 
       final session = await AudioSession.instance;
       await session.configure(const AudioSessionConfiguration.speech());
-      
-
     });
 
     Future(() async {
-      // スピーカーから音を出すように設定
-      await tts.setIosAudioCategory(IosTextToSpeechAudioCategory.playback, [
-        IosTextToSpeechAudioCategoryOptions.defaultToSpeaker
-      ]);
+      // Set to output sound from speaker
+      await tts.setIosAudioCategory(IosTextToSpeechAudioCategory.playback,
+          [IosTextToSpeechAudioCategoryOptions.defaultToSpeaker]);
 
-      // 音声をキューに追加する(Androidのみ)
-      if(Platform.isAndroid){
+      // Add to queue (Android only)
+      if (Platform.isAndroid) {
         tts.setQueueMode(1);
       }
 
-      // 話す速度の設定
+      // Set speaking speed
       await tts.setPitch(0.9);
       await tts.setSpeechRate(0.6);
     });
 
-    // 設定画面を開く
+    // Open settings screen
     Future(() {
       Navigator.push(
         context,
@@ -239,37 +208,31 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  String _getVoiceName(String type)
-  {
-    return (type == "user" ? prefs.getString("voice_わたし") : prefs.getString("voice_ロボット"))?? "";
+  String _getVoiceName(String type) {
+    return (type == "user"
+            ? prefs.getString("voice_me")
+            : prefs.getString("voice_robot")) ??
+        "";
   }
 
-  // 読み上げ
+  // Speak
   Future<void> _speach(dynamic item) async {
-
-    
-    // 停止して再生
+    // Stop and play
     await tts.stop();
-    await tts.setVoice({
-      'name': _getVoiceName(item["role"]),
-      'locale': 'ja-JP'
-    });
-    
-    await tts.speak(
-      item["content"]
-    );
+    await tts
+        .setVoice({'name': _getVoiceName(item["role"]), 'locale': 'ja-JP'});
+
+    await tts.speak(item["content"]);
   }
 
-  // 音声入力開始
-  _speak()  {
-
-
+  // Start voice input
+  _speak() {
     Future(() async {
-      // 再生を停止し
+      // Stop playback
       await tts.stop();
     });
 
-    // 入力を空にする
+    // Clear input
     setState(() {
       lastWords = "";
     });
@@ -277,72 +240,52 @@ class _MyHomePageState extends State<MyHomePage> {
     showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        
         return const SpeechDialog();
       },
     ).then((value) {
-
       _logger.info("end dialog!");
 
       setState(() {
-        if(value != null){
+        if (value != null) {
           lastWords = value;
         }
       });
 
-
-      
       _ai();
-
-
-
     });
   }
 
-    
-
-
-
-  // メッセージを消去
+  // Clear messages
   Future<void> _cleanMessage() async {
     setState(() {
       chatMessages.clear();
     });
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('メッセージ削除しました'),
+      content: Text('Deleted messages'),
     ));
   }
-  
 
   // ChatGPT
   Future<void> _ai() async {
-    
     _logger.info("_ai");
-    
-    // 入力が何も無ければスキップ
-    if(lastWords == "")
-    {
+
+    // Skip if no input
+    if (lastWords == "") {
       return;
     }
 
-    // 下までスクロール
+    // Scroll to bottom
     scrollController.jumpTo(scrollController.position.maxScrollExtent);
 
-    
-    // 停止して再生
+    // Stop and play
     await tts.stop();
     await tts.setVoice({'name': _getVoiceName("user"), 'locale': 'ja-JP'});
-    await tts.speak(
-      lastWords
-    );
-    
+    await tts.speak(lastWords);
 
-
-    // 送信するメッセージを追加
+    // Add sent message
     chatMessages.add({"role": "user", "content": lastWords});
 
     setState(() {
-      
       inputTextcontroller.clear();
 
       FocusScopeNode currentFocus = FocusScope.of(context);
@@ -351,18 +294,22 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
 
-
-    // 現在の日時を追加して複製
+    // Add current date and time and duplicate
     List<Object> chatMessagesClone = [
-      {"role": "user", "content": DateFormat('今は yyyy年MM月dd日 HH時mm分です').format(DateTime.now())},
+      {
+        "role": "user",
+        "content":
+            DateFormat('Today is yyyy年MM月dd日 HH時mm分').format(DateTime.now())
+      },
       ...chatMessages
     ];
 
-
-    Uri url = Uri.parse("https://api.openai.com/v1/chat/completions");
+    final openaiApiKey = dotenv.get("OPENAI_API_KEY");
+    final openaiApiBase = dotenv.get("OPEN_AI_API_BASE");
+    Uri url = Uri.parse("$openaiApiBase/chat/completions");
     Map<String, String> headers = {
       'Content-type': 'application/json',
-      "Authorization": "Bearer ${dotenv.get("OPEN_AI_API_KEY")}"
+      "Authorization": "Bearer $openaiApiKey"
     };
     String body = json.encode({
       "frequency_penalty": 0,
@@ -375,7 +322,6 @@ class _MyHomePageState extends State<MyHomePage> {
       "top_p": 1
     });
 
-
     final request = http.Request('POST', url);
     request.headers.addAll(headers);
     request.body = body;
@@ -383,13 +329,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final response = await request.send();
 
-
-    if(response.statusCode != 200)
-    {
+    if (response.statusCode != 200) {
       setState(() {
-
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("通信エラーが発生しました ${response.statusCode}"),
+          content: Text("Communication error occurred ${response.statusCode}"),
         ));
       });
 
@@ -397,10 +340,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     _logger.info(response.statusCode);
-    
 
-
-    // 受信メッセージを追加
+// Add received message
     chatMessages.add({"role": "assistant", "content": ""});
     setState(() {
       chatMessages = chatMessages;
@@ -411,215 +352,185 @@ class _MyHomePageState extends State<MyHomePage> {
     var receiveDone = false;
 
     await for (final message in response.stream.transform(utf8.decoder)) {
-
       message.split("\n").forEach((msg) {
-
-        if(!msg.startsWith("data: "))
-        {
+        if (!msg.startsWith("data: ")) {
           return;
         }
 
         var jsonMsg = msg.replaceFirst(RegExp("^data: "), "");
 
-        if(jsonMsg == "[DONE]")
-        {
+        if (jsonMsg == "[DONE]") {
           return;
         }
 
         final data = json.decode(jsonMsg);
-        
 
         var content = data["choices"][0]["delta"]["content"];
-        if(content == null){
+        if (content == null) {
           return;
         }
 
         receiveMsg += content;
 
         receiveMsgSpeak += content;
-        
-        // まだ終わっていない時
-        if(!receiveDone)
-        {
-          // 少量のテキストで喋りださないように最小数チェック
-          if(receiveMsgSpeak.length > 50)
-          {
+
+        // When not finished yet
+        if (!receiveDone) {
+          // Minimum check so as not to start speaking with small text
+          if (receiveMsgSpeak.length > 50) {
             var stopIndex = receiveMsgSpeak.indexOf(RegExp("、|。|\n"), 50);
-            if(stopIndex > 0)
-            {
+            if (stopIndex > 0) {
               var speackMsg = receiveMsgSpeak.substring(0, stopIndex);
-              receiveMsgSpeak = receiveMsgSpeak.substring(stopIndex+1, receiveMsgSpeak.length);
+              receiveMsgSpeak = receiveMsgSpeak.substring(
+                  stopIndex + 1, receiveMsgSpeak.length);
 
               () async {
-                // 受信メッセージを話す
-                await tts.setVoice({'name': _getVoiceName("robot"), 'locale': 'ja-JP'});
-                await tts.speak(
-                  speackMsg
-                );
+                // Speak received message
+                await tts.setVoice(
+                    {'name': _getVoiceName("robot"), 'locale': 'ja-JP'});
+                await tts.speak(speackMsg);
               }();
             }
           }
         }
 
-        // 最後に追加したデータにテキストを設定する
-        dynamic item = chatMessages[chatMessages.length-1];
+        // Set text to last added data
+        dynamic item = chatMessages[chatMessages.length - 1];
         item["content"] = receiveMsg;
-        chatMessages[chatMessages.length-1] = item;
-        
+        chatMessages[chatMessages.length - 1] = item;
+
         setState(() {
           chatMessages = chatMessages;
 
-          // 下までスクロール
+          // Scroll to bottom
           scrollController.jumpTo(scrollController.position.maxScrollExtent);
         });
-
       });
-      
     }
 
     receiveDone = true;
 
-    // 下までスクロール
+    // Scroll to bottom
     scrollController.jumpTo(scrollController.position.maxScrollExtent);
 
-    // 残りの受信メッセージを話す
+    // Speak remaining received messages
     await tts.setVoice({'name': _getVoiceName("robot"), 'locale': 'ja-JP'});
-    await tts.speak(
-      receiveMsgSpeak
-    );
-
-
-
+    await tts.speak(receiveMsgSpeak);
   }
 
-
-  // テキスト入力変更
+  // change text input
   void _handleText(String e) {
     setState(() {
       lastWords = e;
     });
   }
-  
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text(widget.title),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingView()),
-                );
-              },
-            ),
-          ],
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingView()),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
-          
         children: <Widget>[
-          
           Expanded(
             child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: SingleChildScrollView(
-
-                controller: scrollController,
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: chatMessages.map((dynamic item)=>(
-                    GestureDetector(
-                      onTap: () {
-                          _speach(item);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children:[
-                            Text(
-                              item["role"] == "user" ? "わたし　：" : "ロボット：",
-                              style: TextStyle(
-                                color: item["role"] == "user" ? Colors.blue : Colors.green, // テキストの色を青に設定
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                item["content"],
-                                softWrap: true,
-                              )
-                            )
-                          ]
-                        )
-                      )
-                    )
-                  )).toList()
-                )
-              ),
+              padding: const EdgeInsets.all(10),
+              child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: chatMessages
+                          .map((dynamic item) => (GestureDetector(
+                              onTap: () {
+                                _speach(item);
+                              },
+                              child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item["role"] == "user"
+                                              ? "わたし　："
+                                              : "ロボット：",
+                                          style: TextStyle(
+                                            color: item["role"] == "user"
+                                                ? Colors.blue
+                                                : Colors.green, // テキストの色を青に設定
+                                          ),
+                                        ),
+                                        Expanded(
+                                            child: Text(
+                                          item["content"],
+                                          softWrap: true,
+                                        ))
+                                      ])))))
+                          .toList())),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(10),
-            child:Row(
-            
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: const Color.fromARGB(255, 0, 149, 255),
-                    child:
-                      IconButton(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: const Color.fromARGB(255, 0, 149, 255),
+                      child: IconButton(
                         onPressed: _cleanMessage,
                         icon: const Icon(Icons.cleaning_services),
                         iconSize: 18,
-                        color:const Color.fromARGB(255, 255, 255, 255),
+                        color: const Color.fromARGB(255, 255, 255, 255),
                       ),
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: 
-                    TextFormField(
-                      controller: inputTextcontroller,
-                      enabled: true,
-                      obscureText: false,
-                      maxLines: null,
-                      onChanged: _handleText,
-                      decoration: InputDecoration(
+                  Expanded(
+                      child: TextFormField(
+                    controller: inputTextcontroller,
+                    enabled: true,
+                    obscureText: false,
+                    maxLines: null,
+                    onChanged: _handleText,
+                    decoration: InputDecoration(
                       suffixIcon: IconButton(
                         onPressed: _speak,
                         icon: const Icon(Icons.mic),
                       ),
                     ),
-                    )
-                ),
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color.fromARGB(255, 0, 149, 255),
-                  child:
-                    IconButton(
+                  )),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: const Color.fromARGB(255, 0, 149, 255),
+                    child: IconButton(
                       onPressed: _ai,
                       icon: const Icon(Icons.send),
                       iconSize: 18,
-                      color:const Color.fromARGB(255, 255, 255, 255),
+                      color: const Color.fromARGB(255, 255, 255, 255),
                     ),
-                )
-              ],
-            )
-          )
+                  )
+                ],
+              ))
         ],
       ),
     );
   }
 }
 
-
 class SpeechDialog extends StatefulWidget {
-  
   const SpeechDialog({Key? key}) : super(key: key);
 
   @override
@@ -633,82 +544,79 @@ class SpeechDialogState extends State<SpeechDialog> {
   stt.SpeechToText speech = stt.SpeechToText();
   ScrollController scrollController = ScrollController();
   double soundLevel = 0;
-  
-
-
 
   @override
   void initState() {
     super.initState();
 
-    
     Future(() async {
       final session = await AudioSession.instance;
       await session.configure(const AudioSessionConfiguration.speech());
-      
     });
 
     Future(() async {
-
-      // スピーチを初期化
-      bool available = await speech.initialize(
-        onError: (SpeechRecognitionError error) {
-          if(!mounted) { return; }
-          setState(() {
-            lastError = '${error.errorMsg} - ${error.permanent}';
-          });
-        },
-        onStatus: (String status) {
-          if(!mounted) { return; }
-          setState(() {
-            lastStatus = status;
-            _logger.info(status);
-
-            // 下までスクロール
-            scrollController.jumpTo(scrollController.position.maxScrollExtent);
-          });
+      // Initialize speech
+      bool available =
+          await speech.initialize(onError: (SpeechRecognitionError error) {
+        if (!mounted) {
+          return;
         }
-      );
+        setState(() {
+          lastError = '${error.errorMsg} - ${error.permanent}';
+        });
+      }, onStatus: (String status) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          lastStatus = status;
+          _logger.info(status);
+
+          // Scroll to bottom
+          scrollController.jumpTo(scrollController.position.maxScrollExtent);
+        });
+      });
 
       if (available) {
-        
-        
-        speech.listen(onResult: (SpeechRecognitionResult result) {
-          if(!mounted) { return; }
-          
-          setState(() {
-            lastWords = result.recognizedWords;
-            
-          });
-        },
-        onSoundLevelChange:(level){
+        speech.listen(
+            onResult: (SpeechRecognitionResult result) {
+              if (!mounted) {
+                return;
+              }
 
-          if(!mounted) { return; }
+              setState(() {
+                lastWords = result.recognizedWords;
+              });
+            },
+            onSoundLevelChange: (level) {
+              if (!mounted) {
+                return;
+              }
 
-          setState(() {
-            if(lastStatus != "listening")
-            {
-              // TODO:iOSの時には録音準備完了の音が鳴らないので鳴らしたいがspeech.listen状態では鳴らないようです(バイブレーションも駄目)
-            }
-            lastStatus = "listening";
-            soundLevel = level * -1 ;
-          });
-        },
-        localeId: "ja-JP"
-        );
+              setState(() {
+                if (lastStatus != "listening") {
+                  // TODO: On iOS, the recording ready sound does not play, so I want to play it, but it does not play in speech.listen state (vibration also no good)
+                }
+                lastStatus = "listening";
+                soundLevel = level * -1;
+              });
+            },
+            localeId: "ja-JP");
       } else {
         _logger.info("The user has denied the use of speech recognition.");
       }
-      
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-
-      title: Center(child:Text(lastStatus == "done" ? "終了" : lastStatus == "listening" ? "聞き取り中" : "準備中 $lastStatus")),
+      title: Center(
+          child: Text(lastStatus == "done"
+              ? "Finished"
+              : lastStatus == "listening"
+                  ? "Listening"
+                  : "Preparing $lastStatus")),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -716,24 +624,25 @@ class SpeechDialogState extends State<SpeechDialog> {
             height: 100,
             child: SingleChildScrollView(
               controller: scrollController,
-              child: Text(lastWords, style:const TextStyle(
-                                color: Colors.cyan
-                              ),),
+              child: Text(
+                lastWords,
+                style: const TextStyle(color: Colors.cyan),
+              ),
             ),
           ),
           CircleAvatar(
             radius: 20 + soundLevel,
-            backgroundColor: lastStatus == "listening" ? const Color.fromARGB(255, 0, 149, 255) : const Color.fromARGB(255, 128, 128, 128),
-            child:
-              IconButton(
-                onPressed: (){
-
-                  Navigator.of(context).pop(lastWords);
-                },
-                icon: const Icon(Icons.mic),
-                iconSize: 18 + soundLevel,
-                color:const Color.fromARGB(255, 255, 255, 255),
-              ),
+            backgroundColor: lastStatus == "listening"
+                ? const Color.fromARGB(255, 0, 149, 255)
+                : const Color.fromARGB(255, 128, 128, 128),
+            child: IconButton(
+              onPressed: () {
+                Navigator.of(context).pop(lastWords);
+              },
+              icon: const Icon(Icons.mic),
+              iconSize: 18 + soundLevel,
+              color: const Color.fromARGB(255, 255, 255, 255),
+            ),
           ),
         ],
       ),
@@ -742,11 +651,9 @@ class SpeechDialogState extends State<SpeechDialog> {
 
   @override
   void dispose() {
-
-    // 必要なクリーンアップ処理を実行
+    // Perform necessary cleanup
     super.dispose();
 
     speech.stop();
-    
   }
 }
