@@ -109,12 +109,12 @@ class _SettingViewState extends State<SettingView> {
           onChanged: (String? value) {
             setState(() {
               _selectedItemMy = value!;
-              _changeVoice(_selectedItemMy, "me", true);
+              _changeVoice(_selectedItemMy, "my", true);
             });
           },
         ),
         const Divider(height: 100),
-        const Text('Robot Voice'),
+        const Text('Bot Voice'),
         DropdownButton<String>(
           value: _selectedItemBot,
           items: _items
@@ -124,7 +124,7 @@ class _SettingViewState extends State<SettingView> {
           onChanged: (String? value) {
             setState(() {
               _selectedItemBot = value!;
-              _changeVoice(_selectedItemBot, "robot", true);
+              _changeVoice(_selectedItemBot, "bot", true);
             });
           },
         ),
@@ -293,7 +293,20 @@ class _MyHomePageState extends State<MyHomePage> {
     await tts.speak(lastWords);
 
     // Add sent message
-    chatMessages.add({"role": "user", "content": lastWords});
+    final promptTemplate = dotenv.get("PROMPT_TEMPLATE", fallback: "");
+    if (promptTemplate == "") {
+      chatMessages.add({"role": "user", "content": lastWords});
+    } else {
+      chatMessages.add(
+        {
+          "role": "user",
+          "content": promptTemplate.replaceFirst(
+            "{instruction}",
+            lastWords,
+          ),
+        },
+      );
+    }
 
     setState(() {
       inputTextcontroller.clear();
@@ -308,14 +321,14 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Object> chatMessagesClone = [
       {
         "role": "user",
-        "content":
-            DateFormat('Today is yyyy年MM月dd日 HH時mm分').format(DateTime.now())
+        "content": DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())
       },
       ...chatMessages
     ];
 
     final openaiApiKey = dotenv.get("OPENAI_API_KEY");
-    final openaiApiBase = dotenv.get("OPENAI_API_BASE");
+    final openaiApiBase =
+        dotenv.get("OPENAI_API_BASE", fallback: "https://api.openai.com/v1");
     Uri url = Uri.parse("$openaiApiBase/chat/completions");
     Map<String, String> headers = {
       'Content-type': 'application/json',
