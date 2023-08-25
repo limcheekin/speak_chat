@@ -292,21 +292,8 @@ class _MyHomePageState extends State<MyHomePage> {
         .setVoice({'name': _getVoiceName("user"), 'locale': defaultLocaleId});
     await tts.speak(lastWords);
 
-    // Add sent message
-    final promptTemplate = dotenv.get("PROMPT_TEMPLATE", fallback: "");
-    if (promptTemplate == "") {
-      chatMessages.add({"role": "user", "content": lastWords});
-    } else {
-      chatMessages.add(
-        {
-          "role": "user",
-          "content": promptTemplate.replaceFirst(
-            "{instruction}",
-            lastWords,
-          ),
-        },
-      );
-    }
+    // Add send message
+    chatMessages.add({"role": "user", "content": lastWords});
 
     setState(() {
       inputTextcontroller.clear();
